@@ -1,0 +1,14 @@
+language: scala
+scala:
+  - 2.12.4
+branches:
+  only:
+    - master
+notifications:
+  email:
+    recipients:
+      - mowczare@student.agh.edu.pl
+jdk:
+  - oraclejdk8
+
+script: sbt ++$TRAVIS_SCALA_VERSION test
