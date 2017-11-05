@@ -1,16 +1,25 @@
-import akka.actor.ActorSystem
-import akka.testkit.{TestKit, TestProbe}
+import actors.BasicPaxosProcessActor
+import actors.BasicPaxosProcessActor.Create
+import akka.cluster.sharding.ClusterSharding
+import akka.testkit.TestProbe
+import clustering.IsolatedCluster
+import conf.Config
 import org.scalatest.{Matchers, WordSpecLike}
 
-class ExampleTest extends TestKit(ActorSystem("test")) with WordSpecLike with Matchers {
-  "basic actor system" when {
-    val someActor = TestProbe()
-
-    "sending PingCommand" should {
-      someActor.ref ! PingCommand
-
-      "receive PingCommand" in {
-        someActor.expectMsg(PingCommand)
+class ExampleTest extends WordSpecLike with Matchers {
+  "Basic Paxos actorsystem" when {
+    val nodes = Config.nodesIds
+    "testing hard" should {
+      "work" in {
+        new IsolatedCluster {
+          val client = TestProbe()
+          val processesRegion = ClusterSharding(system).shardRegion(BasicPaxosProcessActor.typeName)
+          nodes.foreach { nodeId =>
+            processesRegion ! Create(nodeId)
+          }
+//TODO fix
+//          expectMsg(SampleInfo("actor1", SampleActorState()))
+        }
       }
     }
   }

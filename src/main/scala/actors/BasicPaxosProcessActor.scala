@@ -1,12 +1,19 @@
 package actors
 
 import actors.BasicPaxosProcessActor._
-import akka.actor.{Actor, ActorRef, Props}
+import actors.Paths.nodesPath
+import akka.actor.{Actor, ActorRef, ActorSystem, Props}
+import akka.cluster.sharding.ShardRegion.{ExtractEntityId, ExtractShardId}
+import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings}
 import com.typesafe.scalalogging.StrictLogging
+import conf.Config
 import utils.SequenceNumber
 
-class BasicPaxosProcessActor(client: ActorRef, nodesPath: ActorRef, nodesIds: List[String]) extends Actor
+
+class BasicPaxosProcessActor extends Actor
   with StrictLogging {
+
+  implicit val system = context.system
 
   //common paxos process data
   private var id: String = ""
@@ -14,6 +21,7 @@ class BasicPaxosProcessActor(client: ActorRef, nodesPath: ActorRef, nodesIds: Li
   private var highestSeqNumber: SequenceNumber = SequenceNumber.min
 
   //proposer Cache
+  private var currentClient: Option[ActorRef] = None
   private var currentPromisers: List[String] = List()
   private var currentSeqNumber: Option[SequenceNumber] = None
 
@@ -23,6 +31,7 @@ class BasicPaxosProcessActor(client: ActorRef, nodesPath: ActorRef, nodesIds: Li
     case Create(id) =>
       this.id = id
       context.become(postCreate)
+      logger.info(s"Created $id entity")
     case other =>
       logger.warn(s"Got $other in not created state")
   }
@@ -42,7 +51,7 @@ class BasicPaxosProcessActor(client: ActorRef, nodesPath: ActorRef, nodesIds: Li
           currentPromisers.foreach { promiserId =>
             nodesPath ! Accept(promiserId, id, value, seqNumber)
           }
-          client ! WriteSucceeded
+          currentClient.foreach(_ ! WriteSucceeded)
         } else if (currentPromisers.size > consensusValue) {
           nodesPath ! Accept(promiserId, id, value, seqNumber)
         }
@@ -56,10 +65,11 @@ class BasicPaxosProcessActor(client: ActorRef, nodesPath: ActorRef, nodesIds: Li
   }
 
   def readWrite: Receive = {
-    case ReadValue =>
+    case ReadValue(_, client) =>
       client ! ReadResponse(data)
 
-    case WriteValue(_, value) =>
+    case WriteValue(_, client, value) =>
+      currentClient = Some(client)
       currentPromisers = List()
       val seqNo = SequenceNumber.generate(id)
       currentSeqNumber = Some(seqNo)
@@ -70,17 +80,39 @@ class BasicPaxosProcessActor(client: ActorRef, nodesPath: ActorRef, nodesIds: Li
 
 object BasicPaxosProcessActor {
 
-  def props(client: ActorRef, nodesPath: ActorRef, nodesIds: List[String]) =
-    Props(new BasicPaxosProcessActor(client, nodesPath, nodesIds))
+  val nodesIds = Config.nodesIds
 
-  sealed trait BasicPaxosCommand
+  val typeName = "Process"
+
+  def props = Props(new BasicPaxosProcessActor)
+
+  def clusterSharding()(implicit actorSystem: ActorSystem) =
+    ClusterSharding(actorSystem).start(
+      typeName = typeName,
+      entityProps = props,
+      settings = ClusterShardingSettings(actorSystem),
+      extractEntityId = extractEntityId,
+      extractShardId = extractShardId
+    )
+
+  def extractEntityId: ExtractEntityId = {
+    case a: BasicPaxosCommand => (a.id, a)
+  }
+
+  def extractShardId: ExtractShardId = {
+    case a: BasicPaxosCommand => (a.id.hashCode % Config.numberOfNodes).toString
+  }
+
+  sealed trait BasicPaxosCommand {
+    def id: String
+  }
+
   case class Create(id: String) extends BasicPaxosCommand
-  case class ReadValue(id: String) extends BasicPaxosCommand
-  case class WriteValue(id: String, value: String) extends BasicPaxosCommand
+  case class ReadValue(id: String, client: ActorRef) extends BasicPaxosCommand
+  case class WriteValue(id: String, client: ActorRef, value: String) extends BasicPaxosCommand
   case class Prepare(id: String, proposerId: String, value: String, seqNumber: SequenceNumber) extends BasicPaxosCommand
   case class Promise(id: String, promiserId: String, value: String, seqNumber: SequenceNumber) extends BasicPaxosCommand
   case class Accept(id: String, proposerId: String, value: String, seqNumber: SequenceNumber) extends BasicPaxosCommand
-  case class Accepted(id: String, value: String, seqNumber: SequenceNumber) extends BasicPaxosCommand
 
   case class ReadResponse(value: Option[String])
   case object WriteSucceeded
