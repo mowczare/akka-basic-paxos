@@ -1,7 +1,7 @@
 package conf
 
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.ConfigFactory
 
 object Config {
-  val config: Config = ConfigFactory.load()
+  val config = ConfigFactory.load()
 }
