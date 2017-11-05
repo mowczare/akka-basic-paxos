@@ -1,4 +1,3 @@
-import actors.BasicPaxosActor.PingCommand
 import akka.actor.ActorSystem
 import akka.testkit.{TestKit, TestProbe}
 import org.scalatest.{Matchers, WordSpecLike}
@@ -16,3 +15,5 @@ class ExampleTest extends TestKit(ActorSystem("test")) with WordSpecLike with Ma
     }
   }
 }
+
+case object PingCommand
