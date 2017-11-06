@@ -2,16 +2,16 @@ package actors
 
 import actors.BasicPaxosProcessActor._
 import actors.Paths.nodesPath
-import akka.actor.{Actor, ActorRef, ActorSystem, Props}
+import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props}
 import akka.cluster.sharding.ShardRegion.{ExtractEntityId, ExtractShardId}
 import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings}
-import com.typesafe.scalalogging.StrictLogging
+import com.typesafe.scalalogging.{LazyLogging, StrictLogging}
 import conf.Config
 import utils.SequenceNumber
 
 
 class BasicPaxosProcessActor extends Actor
-  with StrictLogging {
+  with ActorLogging {
 
   implicit val system = context.system
 
@@ -27,13 +27,15 @@ class BasicPaxosProcessActor extends Actor
 
   private val consensusValue = (nodesIds.size / 2) + 1
 
-  override def receive: Receive = {
+  override def receive: Receive = preCreate
+
+  def preCreate: Receive = {
     case Create(id) =>
+      log.info(s"Created $id entity")
       this.id = id
       context.become(postCreate)
-      logger.info(s"Created $id entity")
     case other =>
-      logger.warn(s"Got $other in not created state")
+      log.warning(s"Got $other in not created state")
   }
 
   def postCreate: Receive = readWrite orElse {
@@ -51,7 +53,7 @@ class BasicPaxosProcessActor extends Actor
           currentPromisers.foreach { promiserId =>
             nodesPath ! Accept(promiserId, id, value, seqNumber)
           }
-          currentClient.foreach(_ ! WriteSucceeded)
+          currentClient.foreach(_ ! WriteSucceeded(value))
         } else if (currentPromisers.size > consensusValue) {
           nodesPath ! Accept(promiserId, id, value, seqNumber)
         }
@@ -62,10 +64,17 @@ class BasicPaxosProcessActor extends Actor
         data = Some(value)
       }
 
+    case Kill(_) =>
+      context.become(preCreate)
+
+    case other =>
+      log.error(s"Got $other in created state")
+
   }
 
   def readWrite: Receive = {
     case ReadValue(_, client) =>
+      log.info(s"Got Read request to $id, sending $data")
       client ! ReadResponse(data)
 
     case WriteValue(_, client, value) =>
@@ -82,7 +91,7 @@ object BasicPaxosProcessActor {
 
   val nodesIds = Config.nodesIds
 
-  val typeName = "Process"
+  val typeName = "processActors"
 
   def props = Props(new BasicPaxosProcessActor)
 
@@ -113,8 +122,9 @@ object BasicPaxosProcessActor {
   case class Prepare(id: String, proposerId: String, value: String, seqNumber: SequenceNumber) extends BasicPaxosCommand
   case class Promise(id: String, promiserId: String, value: String, seqNumber: SequenceNumber) extends BasicPaxosCommand
   case class Accept(id: String, proposerId: String, value: String, seqNumber: SequenceNumber) extends BasicPaxosCommand
+  case class Kill(id: String) extends BasicPaxosCommand
 
   case class ReadResponse(value: Option[String])
-  case object WriteSucceeded
+  case class WriteSucceeded(value: String)
 
 }
