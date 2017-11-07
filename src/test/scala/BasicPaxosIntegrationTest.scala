@@ -54,40 +54,19 @@ class BasicPaxosIntegrationTest extends TestKit(ActorSystem(Config.systemName)) 
       }
 
       "Read latter value when two sequential writes are served" in { //DUELING PROPOSERS
-        val badValue = "someGarbage"
-        val newValue = "newValue3"
-        processesRegion ! WriteValue(nodes.head, client.ref, badValue)
-        processesRegion ! WriteValue(nodes.tail.head, client.ref, newValue)
-        expectMsg(WriteSucceeded(newValue))
-
+        val firstValue = "firstValue3"
+        val secondValue = "secondValue3"
+        val secondClient = TestProbe()
+        processesRegion ! WriteValue(nodes.head, client.ref, firstValue)
+        Thread.sleep(50)
+        processesRegion ! WriteValue(nodes.tail.head, secondClient.ref, secondValue)
+        Thread.sleep(500)
+        secondClient.expectMsg(WriteSucceeded(secondValue))
         nodes.foreach { nodeId =>
-          processesRegion ! ReadValue(nodeId, client.ref)
-          eventually {
-            client.expectMsg(standardTimeout, ReadResponse(Some(newValue)))
-          }
+          processesRegion ! ReadValue(nodeId, secondClient.ref)
+          secondClient.expectMsg(ReadResponse(Some(secondValue)))
         }
       }
-
-
-      "Get no Write response when half of the nodes are dead" in {
-        val oldValue = "newValue3"
-        val newValue = "newValue4"
-        nodesIds.slice(nodesIds.size/2, nodesIds.size).foreach(nodeId => processesRegion ! Kill(nodeId))
-        processesRegion ! WriteValue(nodes.head, client.ref, newValue)
-        client.expectNoMessage(standardTimeout)
-
-        nodes.foreach { nodeId =>
-          processesRegion ! ReadValue(nodeId, client.ref)
-          client.expectMsg(ReadResponse(Some(oldValue)))
-        }
-      }
-
-      //TODO ACCEPTOR FAIL, PROPOSER FAIL, FIX TESTS
-
-
-
-
-
     }
   }
 }

@@ -46,6 +46,8 @@ libraryDependencies ++= akkaDeps ++ other
 
 fork in run := true
 
+fork in test := false
+
 resourceDirectory in Compile := baseDirectory.value / "conf"
 
 resourceDirectory in Test := baseDirectory.value / "conf"

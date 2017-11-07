@@ -41,18 +41,23 @@ class BasicPaxosProcessActor extends Actor
   def postCreate: Receive = readWrite orElse {
 
     case Prepare(_, proposerId, value, seqNumber) =>
+      log.info(s"Got Prepare msg from $proposerId with value $value and seqNo: $seqNumber")
       if (seqNumber > highestSeqNumber) {
+        log.info(s"seqNo: $seqNumber is greater than highestSeqNo: $highestSeqNumber, sending Promise")
         highestSeqNumber = seqNumber
         nodesPath ! Promise(proposerId, id, value, seqNumber)
       }
 
     case Promise(_, promiserId, value, seqNumber) =>
+      log.info(s"Got Promise from $promiserId")
       currentSeqNumber.filter(_ == seqNumber).foreach { curSeqNo =>
         currentPromisers ::= promiserId
         if (currentPromisers.size == consensusValue) {
+          log.info(s"Got majority of promises, sending Accepts from now on")
           currentPromisers.foreach { promiserId =>
             nodesPath ! Accept(promiserId, id, value, seqNumber)
           }
+          data = Some(value)
           currentClient.foreach(_ ! WriteSucceeded(value))
         } else if (currentPromisers.size > consensusValue) {
           nodesPath ! Accept(promiserId, id, value, seqNumber)
@@ -60,11 +65,14 @@ class BasicPaxosProcessActor extends Actor
       }
 
     case Accept(_, proposerId, value, seqNumber) =>
+      log.info(s"Got Accept from $proposerId")
       if (seqNumber == highestSeqNumber) {
+        log.info(s"Seq number is correct, updating value to $value")
         data = Some(value)
       }
 
     case Kill(_) =>
+      log.info(s"Node $id is now down")
       context.become(preCreate)
 
     case other =>
@@ -81,6 +89,8 @@ class BasicPaxosProcessActor extends Actor
       currentClient = Some(client)
       currentPromisers = List()
       val seqNo = SequenceNumber.generate(id)
+      log.info(s"Got Write request, sending seqNo: $seqNo")
+      highestSeqNumber = seqNo
       currentSeqNumber = Some(seqNo)
       nodesIds.foreach(nodesPath ! Prepare(_, id, value, seqNo))
   }
