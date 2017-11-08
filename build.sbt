@@ -6,7 +6,7 @@ scalaVersion := "2.12.4"
 
 version := IO.read(file("version"))
 
-name := "Akka Basic Paxos"
+name := "Akka-Basic-Paxos"
 
 resolvers += "Typesafe repository" at "http://repo.typesafe.com/typesafe/releases/"
 
@@ -58,18 +58,19 @@ unmanagedResourceDirectories in Test += baseDirectory.value / "src/main/resource
 
 testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-u", "target/test-reports")
 
+mainClass in Compile := Some("BasicPaxosSystem")
 
 herokuAppName in Compile := "akka-basic-paxos"
 
 herokuFatJar in Compile := Some((assemblyOutputPath in assembly).value)
 
 herokuProcessTypes in Compile := Map(
-  "worker" -> "java -Dbasic-paxos.apiPort=8081 -Dclustering.port=2551-jar target/scala-2.12/Akka Basic Paxos-assembly-0.0.1.jar",
-  "worker" -> "java -Dbasic-paxos.apiPort=8082 -Dclustering.port=2552-jar target/scala-2.12/Akka Basic Paxos-assembly-0.0.1.jar",
-  "worker" -> "java -Dbasic-paxos.apiPort=8083 -Dclustering.port=2553-jar target/scala-2.12/Akka Basic Paxos-assembly-0.0.1.jar",
-  "worker" -> "java -Dbasic-paxos.apiPort=8084 -Dclustering.port=2554-jar target/scala-2.12/Akka Basic Paxos-assembly-0.0.1.jar",
-  "worker" -> "java -Dbasic-paxos.apiPort=8085 -Dclustering.port=2555-jar target/scala-2.12/Akka Basic Paxos-assembly-0.0.1.jar",
-  "worker" -> "java -Dbasic-paxos.apiPort=8086 -Dclustering.port=2556-jar target/scala-2.12/Akka Basic Paxos-assembly-0.0.1.jar",
-  "worker" -> "java -Dbasic-paxos.apiPort=8087 -Dclustering.port=2557-jar target/scala-2.12/Akka Basic Paxos-assembly-0.0.1.jar"
+  "worker" -> "java -Dbasic-paxos.apiPort=8081 -Dclustering.port=2551 -jar target/scala-2.12/Akka-Basic-Paxos-assembly-0.0.1.jar",
+  "worker" -> "java -Dbasic-paxos.apiPort=8082 -Dclustering.port=2552 -jar target/scala-2.12/Akka-Basic-Paxos-assembly-0.0.1.jar",
+  "worker" -> "java -Dbasic-paxos.apiPort=8083 -Dclustering.port=2553 -jar target/scala-2.12/Akka-Basic-Paxos-assembly-0.0.1.jar",
+  "worker" -> "java -Dbasic-paxos.apiPort=8084 -Dclustering.port=2554 -jar target/scala-2.12/Akka-Basic-Paxos-assembly-0.0.1.jar",
+  "worker" -> "java -Dbasic-paxos.apiPort=8085 -Dclustering.port=2555 -jar target/scala-2.12/Akka-Basic-Paxos-assembly-0.0.1.jar",
+  "worker" -> "java -Dbasic-paxos.apiPort=8086 -Dclustering.port=2556 -jar target/scala-2.12/Akka-Basic-Paxos-assembly-0.0.1.jar",
+  "worker" -> "java -Dbasic-paxos.apiPort=8087 -Dclustering.port=2557 -jar target/scala-2.12/Akka-Basic-Paxos-assembly-0.0.1.jar"
 )
 
