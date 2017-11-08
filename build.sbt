@@ -31,9 +31,9 @@ val akkaDeps = Seq(
 )
 
 val other = Seq(
-"org.scalatest" %% "scalatest" % "3.0.1",
-"com.typesafe.scala-logging" %% "scala-logging" % "3.7.2",
-"com.typesafe" % "config" % "1.3.1"
+  "org.scalatest" %% "scalatest" % "3.0.1",
+  "com.typesafe.scala-logging" %% "scala-logging" % "3.7.2",
+  "com.typesafe" % "config" % "1.3.1"
 )
 
 lazy val basicPaxos = (project in file(".")).
@@ -57,3 +57,19 @@ unmanagedResourceDirectories in Compile += baseDirectory.value / "src/main/resou
 unmanagedResourceDirectories in Test += baseDirectory.value / "src/main/resources"
 
 testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-u", "target/test-reports")
+
+
+herokuAppName in Compile := "akka-basic-paxos"
+
+herokuFatJar in Compile := Some((assemblyOutputPath in assembly).value)
+
+herokuProcessTypes in Compile := Map(
+  "worker" -> "java -Dbasic-paxos.apiPort=8081 -Dclustering.port=2551-jar target/scala-2.12/Akka Basic Paxos-assembly-0.0.1.jar",
+  "worker" -> "java -Dbasic-paxos.apiPort=8082 -Dclustering.port=2552-jar target/scala-2.12/Akka Basic Paxos-assembly-0.0.1.jar",
+  "worker" -> "java -Dbasic-paxos.apiPort=8083 -Dclustering.port=2553-jar target/scala-2.12/Akka Basic Paxos-assembly-0.0.1.jar",
+  "worker" -> "java -Dbasic-paxos.apiPort=8084 -Dclustering.port=2554-jar target/scala-2.12/Akka Basic Paxos-assembly-0.0.1.jar",
+  "worker" -> "java -Dbasic-paxos.apiPort=8085 -Dclustering.port=2555-jar target/scala-2.12/Akka Basic Paxos-assembly-0.0.1.jar",
+  "worker" -> "java -Dbasic-paxos.apiPort=8086 -Dclustering.port=2556-jar target/scala-2.12/Akka Basic Paxos-assembly-0.0.1.jar",
+  "worker" -> "java -Dbasic-paxos.apiPort=8087 -Dclustering.port=2557-jar target/scala-2.12/Akka Basic Paxos-assembly-0.0.1.jar"
+)
+
