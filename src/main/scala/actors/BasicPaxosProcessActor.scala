@@ -81,12 +81,12 @@ class BasicPaxosProcessActor extends Actor
   }
 
   def readWrite: Receive = {
-    case ReadValue(_, client) =>
+    case ReadValue(_) =>
       log.info(s"Got Read request to $id, sending $data")
-      client ! ReadResponse(data)
+      sender() ! ReadResponse(data)
 
-    case WriteValue(_, client, value) =>
-      currentClient = Some(client)
+    case WriteValue(_, value) =>
+      currentClient = Some(sender())
       currentPromisers = List()
       val seqNo = SequenceNumber.generate(id)
       log.info(s"Got Write request, sending seqNo: $seqNo")
@@ -127,8 +127,8 @@ object BasicPaxosProcessActor {
   }
 
   case class Create(id: String) extends BasicPaxosCommand
-  case class ReadValue(id: String, client: ActorRef) extends BasicPaxosCommand
-  case class WriteValue(id: String, client: ActorRef, value: String) extends BasicPaxosCommand
+  case class ReadValue(id: String) extends BasicPaxosCommand
+  case class WriteValue(id: String, value: String) extends BasicPaxosCommand
   case class Prepare(id: String, proposerId: String, value: String, seqNumber: SequenceNumber) extends BasicPaxosCommand
   case class Promise(id: String, promiserId: String, value: String, seqNumber: SequenceNumber) extends BasicPaxosCommand
   case class Accept(id: String, proposerId: String, value: String, seqNumber: SequenceNumber) extends BasicPaxosCommand

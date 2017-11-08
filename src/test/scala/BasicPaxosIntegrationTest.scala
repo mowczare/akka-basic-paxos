@@ -15,7 +15,6 @@ class BasicPaxosIntegrationTest extends TestKit(ActorSystem(Config.systemName)) 
 
   val nodes = Config.nodesIds
   BasicPaxosProcessActor.clusterSharding()
-  val client = TestProbe()
   val processesRegion = ClusterSharding(system).shardRegion(BasicPaxosProcessActor.typeName)
   implicit val standardTimeout = 10 seconds
 
@@ -28,6 +27,7 @@ class BasicPaxosIntegrationTest extends TestKit(ActorSystem(Config.systemName)) 
       }
 
       "correctly read value from all nodes after write" in {
+        val client = TestProbe()
         val newValue = "newValue1"
         processesRegion ! WriteValue(nodes.head, client.ref, newValue)
         client.expectMsg(WriteSucceeded(newValue))
@@ -41,6 +41,7 @@ class BasicPaxosIntegrationTest extends TestKit(ActorSystem(Config.systemName)) 
       }
 
       "correctly read value from all nodes after update" in {
+        val client = TestProbe()
         val newValue = "newValue2"
         processesRegion ! WriteValue(nodes.tail.head, client.ref, newValue)
         client.expectMsg(WriteSucceeded(newValue))
@@ -54,6 +55,7 @@ class BasicPaxosIntegrationTest extends TestKit(ActorSystem(Config.systemName)) 
       }
 
       "Read latter value when two sequential writes are served" in { //DUELING PROPOSERS
+        val client = TestProbe()
         val firstValue = "firstValue3"
         val secondValue = "secondValue3"
         val secondClient = TestProbe()
