@@ -1,11 +1,27 @@
 language: scala
 scala:
   - 2.12.4
+
+cache:
+  directories:
+    - $HOME/.m2/repository
+    - $HOME/.sbt
+    - $HOME/.ivy2
+
 notifications:
   email:
     recipients:
       - mowczare@student.agh.edu.pl
+
 jdk:
   - oraclejdk8
 
 script: sbt ++$TRAVIS_SCALA_VERSION test
+
+before_deploy: "echo 'DEPLOYMENT STARTING...'"
+
+deploy:
+  provider: script
+  script: sbt stage deployHeroku
+
+after_deploy: "echo 'DEPLOYMENT FINISHED.'"
