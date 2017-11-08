@@ -23,9 +23,9 @@ object BasicPaxosSystem extends App with StrictLogging {
 
   binding onComplete {
     case Success(serverBinding) =>
-      logger.info("Successful bind to address {}", serverBinding.localAddress)
+      println(s"Successful bind to address ${serverBinding.localAddress}")
     case Failure(throwable) =>
-      logger.error("Binding failed", throwable)
+      println("Binding failed", throwable)
       system.terminate()
   }
 

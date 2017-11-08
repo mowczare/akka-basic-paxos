@@ -60,17 +60,19 @@ testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-u", "target/te
 
 mainClass in Compile := Some("BasicPaxosSystem")
 
+enablePlugins(JavaAppPackaging)
+
 herokuAppName in Compile := "akka-basic-paxos"
 
 herokuFatJar in Compile := Some((assemblyOutputPath in assembly).value)
 
 herokuProcessTypes in Compile := Map(
-  "worker" -> "java -Dbasic-paxos.apiPort=8081 -Dclustering.port=2551 -jar target/scala-2.12/Akka-Basic-Paxos-assembly-0.0.1.jar",
-  "worker" -> "java -Dbasic-paxos.apiPort=8082 -Dclustering.port=2552 -jar target/scala-2.12/Akka-Basic-Paxos-assembly-0.0.1.jar",
-  "worker" -> "java -Dbasic-paxos.apiPort=8083 -Dclustering.port=2553 -jar target/scala-2.12/Akka-Basic-Paxos-assembly-0.0.1.jar",
-  "worker" -> "java -Dbasic-paxos.apiPort=8084 -Dclustering.port=2554 -jar target/scala-2.12/Akka-Basic-Paxos-assembly-0.0.1.jar",
-  "worker" -> "java -Dbasic-paxos.apiPort=8085 -Dclustering.port=2555 -jar target/scala-2.12/Akka-Basic-Paxos-assembly-0.0.1.jar",
-  "worker" -> "java -Dbasic-paxos.apiPort=8086 -Dclustering.port=2556 -jar target/scala-2.12/Akka-Basic-Paxos-assembly-0.0.1.jar",
-  "worker" -> "java -Dbasic-paxos.apiPort=8087 -Dclustering.port=2557 -jar target/scala-2.12/Akka-Basic-Paxos-assembly-0.0.1.jar"
+  "node1" -> "java -Dbasic-paxos.apiPort=8081 -Dclustering.port=2551 -jar target/scala-2.12/Akka-Basic-Paxos-assembly-0.0.1.jar",
+  "node2" -> "java -Dbasic-paxos.apiPort=8082 -Dclustering.port=2552 -jar target/scala-2.12/Akka-Basic-Paxos-assembly-0.0.1.jar",
+  "node3" -> "java -Dbasic-paxos.apiPort=8083 -Dclustering.port=2553 -jar target/scala-2.12/Akka-Basic-Paxos-assembly-0.0.1.jar",
+  "node4" -> "java -Dbasic-paxos.apiPort=8084 -Dclustering.port=2554 -jar target/scala-2.12/Akka-Basic-Paxos-assembly-0.0.1.jar",
+  "node5" -> "java -Dbasic-paxos.apiPort=8085 -Dclustering.port=2555 -jar target/scala-2.12/Akka-Basic-Paxos-assembly-0.0.1.jar",
+  "node6" -> "java -Dbasic-paxos.apiPort=8086 -Dclustering.port=2556 -jar target/scala-2.12/Akka-Basic-Paxos-assembly-0.0.1.jar",
+  "node7" -> "java -Dbasic-paxos.apiPort=8087 -Dclustering.port=2557 -jar target/scala-2.12/Akka-Basic-Paxos-assembly-0.0.1.jar"
 )
 
