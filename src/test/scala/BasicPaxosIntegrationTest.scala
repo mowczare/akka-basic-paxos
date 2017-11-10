@@ -29,7 +29,8 @@ class BasicPaxosIntegrationTest extends TestKit(ActorSystem(Config.systemName)) 
       "correctly read value from all nodes after write" in {
         val client = TestProbe()
         val newValue = "newValue1"
-        client.send(processesRegion, WriteValue(nodes.head, newValue))
+        val node = nodes.head
+        client.send(processesRegion, WriteValue(node, newValue))
         client.expectMsg(WriteSucceeded(newValue))
 
         nodes.foreach { nodeId =>
@@ -38,10 +39,11 @@ class BasicPaxosIntegrationTest extends TestKit(ActorSystem(Config.systemName)) 
         }
       }
 
-      "correctly read value from all nodes after update" in {
+      "correctly read value from all nodes after update other node" in {
         val client = TestProbe()
         val newValue = "newValue2"
-        client.send(processesRegion, WriteValue(nodes.tail.head, newValue))
+        val node = nodes.tail.head
+        client.send(processesRegion, WriteValue(node, newValue))
         client.expectMsg(WriteSucceeded(newValue))
 
         nodes.foreach { nodeId =>
@@ -50,21 +52,24 @@ class BasicPaxosIntegrationTest extends TestKit(ActorSystem(Config.systemName)) 
         }
       }
 
-/*      "Read latter value when two sequential writes are served" in { //DUELING PROPOSERS
+      "have all nodes updated with the same value after two sequential writes" in {
         val client = TestProbe()
-        val firstValue = "firstValue3"
-        val secondValue = "secondValue3"
-        val secondClient = TestProbe()
-        client.send(processesRegion, WriteValue(nodes.head, firstValue))
-        Thread.sleep(50)
-        client.send(processesRegion, WriteValue(nodes.tail.head, secondValue))
-        Thread.sleep(500)
-        secondClient.expectMsg(WriteSucceeded(secondValue))
-        nodes.foreach { nodeId =>
-          client.send(processesRegion, ReadValue(nodeId))
-          secondClient.expectMsg(ReadResponse(Some(secondValue)))
+        val newValue = "newValue3a"
+        val newOtherValue = "newValue3b"
+        client.send(processesRegion, WriteValue(nodes.tail.head, newValue))
+        client.send(processesRegion, WriteValue(nodes.head, newOtherValue))
+        client.expectMsgPF() {
+          case WriteSucceeded(v) =>
         }
-      }*/
+
+        val result = nodes.map{ nodeId =>
+          client.send(processesRegion, ReadValue(nodeId))
+          client.expectMsgPF() {
+            case ReadResponse(valueWritten) if List(newValue, newOtherValue).contains(valueWritten.get) => valueWritten
+          }
+        }
+        result.foreach(el => el shouldBe result.head)
+      }
     }
   }
 }
